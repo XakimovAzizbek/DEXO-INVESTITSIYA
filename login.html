@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>DEXO INVEST — Kirish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="app">
+
+  <!-- Logo -->
+  <div class="brand">
+    <div class="brand-mark">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M4 22V6L14 14L24 6V22" stroke="#F2B544" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="brand-name">DEXO<span class="brand-accent">INVEST</span></span>
+  </div>
+
+  <!-- ===================== STEP 1: PHONE ===================== -->
+  <section class="card" id="step-phone" data-step="phone">
+    <h1 class="title">Hisobingizga kiring</h1>
+    <p class="subtitle">Telefon raqamingizni kiriting, sizga tasdiqlash kodi yuboramiz</p>
+
+    <div class="field">
+      <label class="field-label" for="phone-input">Telefon raqam</label>
+      <div class="phone-row">
+        <div class="country-chip">
+          <span class="flag">🇺🇿</span>
+          <span>+998</span>
+        </div>
+        <input
+          id="phone-input"
+          class="input phone-input"
+          type="tel"
+          inputmode="numeric"
+          placeholder="90 123 45 67"
+          maxlength="12"
+          autocomplete="tel"
+        >
+      </div>
+      <p class="field-hint" id="phone-hint">Faqat O‘zbekiston raqamlari (+998) qabul qilinadi</p>
+    </div>
+
+    <div id="recaptcha-container"></div>
+
+    <button class="btn-primary" id="btn-send-code">
+      <span class="btn-text">Kodni yuborish</span>
+      <span class="btn-loader" hidden></span>
+    </button>
+
+    <p class="legal">Davom etish orqali siz <a href="#">Foydalanish shartlari</a> va <a href="#">Maxfiylik siyosati</a>ga rozilik bildirasiz</p>
+  </section>
+
+  <!-- ===================== STEP 2: OTP ===================== -->
+  <section class="card hidden" id="step-otp" data-step="otp">
+    <button class="back-btn" id="btn-back">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <h1 class="title">Kodni tasdiqlang</h1>
+    <p class="subtitle"><span id="sent-phone-label">+998 90 123 45 67</span> raqamiga 6 xonali kod yuborildi</p>
+
+    <div class="otp-ring-wrap">
+      <svg class="otp-ring" viewBox="0 0 120 120">
+        <circle class="otp-ring-track" cx="60" cy="60" r="52"/>
+        <circle class="otp-ring-progress" id="otp-ring-progress" cx="60" cy="60" r="52"/>
+      </svg>
+      <div class="otp-ring-time" id="otp-timer">60</div>
+    </div>
+
+    <div class="otp-inputs" id="otp-inputs">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="0">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="1">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="2">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="3">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+      <input class="otp-box" type="tel" inputmode="numeric" maxlength="1" data-i="5">
+    </div>
+
+    <p class="field-hint error" id="otp-error" hidden>Kod noto‘g‘ri. Qaytadan urinib ko‘ring</p>
+
+    <button class="btn-primary" id="btn-verify-code">
+      <span class="btn-text">Tasdiqlash</span>
+      <span class="btn-loader" hidden></span>
+    </button>
+
+    <button class="btn-ghost" id="btn-resend" disabled>Kodni qayta yuborish</button>
+  </section>
+
+  <!-- ===================== STEP 3: BLOCKED (non-UZ) ===================== -->
+  <section class="card hidden" id="step-blocked" data-step="blocked">
+    <div class="blocked-icon">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="17" stroke="#EF4444" stroke-width="2.4"/>
+        <path d="M11 11L29 29" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1 class="title">Ro‘yxatdan o‘tish cheklangan</h1>
+    <p class="subtitle">DEXO INVEST hozircha faqat O‘zbekiston Respublikasi fuqarolari uchun mavjud. Iltimos, +998 bilan boshlanuvchi raqam kiriting.</p>
+    <button class="btn-primary" id="btn-blocked-back">
+      <span class="btn-text">Orqaga qaytish</span>
+    </button>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<!-- Firebase SDK (compat versiyasi) — config va init endi login.js ichida -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="login.js"></script>
+</body>
+</html>
