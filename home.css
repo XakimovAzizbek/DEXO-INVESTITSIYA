@@ -82,6 +82,19 @@ a{ text-decoration:none; color:inherit; }
 }
 .brand-accent{ color: var(--accent); }
 
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.user-avatar{
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
 .logout-btn{
   width:36px; height:36px; border-radius:10px;
   background: var(--surface-2); border:1px solid var(--border);

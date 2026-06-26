@@ -54,7 +54,17 @@ const db = firebase.firestore();
     }
     currentUser = user;
 
-    document.getElementById("phone-display").textContent = user.phoneNumber;
+    // Google profil ma'lumotlarini ko'rsatish (ism yoki email, va avatar)
+    const userDisplayEl = document.getElementById("user-display");
+    if (userDisplayEl) {
+      userDisplayEl.textContent = user.displayName || user.email || "Foydalanuvchi";
+    }
+    const avatarEl = document.getElementById("user-avatar");
+    if (avatarEl && user.photoURL) {
+      avatarEl.src = user.photoURL;
+      avatarEl.alt = user.displayName || "Profil";
+      avatarEl.hidden = false;
+    }
 
     // Firestore'dagi users/{uid} hujjatini real vaqtda kuzatish
     db.collection("users").doc(user.uid).onSnapshot(

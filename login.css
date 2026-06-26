@@ -114,59 +114,14 @@ body{
 }
 .subtitle span{ color: var(--text); font-weight: 600; }
 
-/* ============ FIELD ============ */
-.field{ margin-bottom: 18px; }
-.field-label{
-  display:block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-}
-
-.phone-row{
-  display:flex;
-  align-items:stretch;
-  gap: 8px;
-}
-
-.country-chip{
-  display:flex;
-  align-items:center;
-  gap: 6px;
-  padding: 0 14px;
-  background: var(--surface-2);
+/* ============ WELCOME ICON ============ */
+.welcome-icon{
+  width: 72px; height: 72px;
+  margin: 0 auto 22px;
+  border-radius: 20px;
+  background: linear-gradient(155deg, var(--surface-2), var(--surface));
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text);
-  white-space: nowrap;
-}
-.flag{ font-size: 16px; }
-
-.input{
-  width: 100%;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0 16px;
-  height: 52px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-  font-family: var(--font-body);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-.input::placeholder{ color: var(--text-faint); font-weight: 500; }
-.input:focus{
-  outline:none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(242,181,68,0.14);
-}
-.input.invalid{
-  border-color: var(--danger);
-  box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+  display:flex; align-items:center; justify-content:center;
 }
 
 .field-hint{
@@ -215,33 +170,27 @@ body{
 }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
-.btn-ghost{
+.btn-google{
   width: 100%;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 16px 0 0;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-.btn-ghost:hover:not(:disabled){ color: var(--accent); }
-.btn-ghost:disabled{ color: var(--text-faint); cursor: not-allowed; }
-
-.back-btn{
-  position: absolute;
-  top: 28px; left: 24px;
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: var(--surface-2);
+  height: 54px;
   border: 1px solid var(--border);
-  color: var(--text-dim);
-  display:flex; align-items:center; justify-content:center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  margin-top: 4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  transition: transform 0.12s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.back-btn:hover{ color: var(--text); border-color: var(--accent-dim); }
+.btn-google:hover{ border-color: var(--accent-dim); background: var(--surface); }
+.btn-google:active{ transform: scale(0.98); }
+.btn-google:disabled{ opacity: 0.5; cursor: not-allowed; transform:none; }
 
 .legal{
   font-size: 12px;
@@ -251,75 +200,6 @@ body{
   line-height: 1.5;
 }
 .legal a{ color: var(--text-dim); text-decoration: underline; text-decoration-color: var(--border); }
-
-/* ============ OTP RING (signature element) ============ */
-.otp-ring-wrap{
-  position: relative;
-  width: 96px; height: 96px;
-  margin: 0 auto 26px;
-  display:flex; align-items:center; justify-content:center;
-}
-.otp-ring{
-  width: 96px; height: 96px;
-  transform: rotate(-90deg);
-}
-.otp-ring-track{
-  fill:none;
-  stroke: var(--border);
-  stroke-width: 6;
-}
-.otp-ring-progress{
-  fill:none;
-  stroke: var(--accent);
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-dasharray: 326.7;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear;
-}
-.otp-ring-time{
-  position:absolute;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 22px;
-  color: var(--text);
-}
-
-/* ============ OTP INPUTS ============ */
-.otp-inputs{
-  display:flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-.otp-box{
-  width: 46px;
-  height: 56px;
-  text-align: center;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  font-family: var(--font-display);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.otp-box:focus{
-  outline:none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(242,181,68,0.14);
-}
-.otp-box.filled{ border-color: var(--accent-dim); }
-.otp-box.shake{ animation: shake 0.4s ease; border-color: var(--danger); }
-
-@keyframes shake{
-  0%,100%{ transform: translateX(0); }
-  20%{ transform: translateX(-6px); }
-  40%{ transform: translateX(6px); }
-  60%{ transform: translateX(-4px); }
-  80%{ transform: translateX(4px); }
-}
 
 /* ============ BLOCKED STATE ============ */
 .blocked-icon{
@@ -361,8 +241,6 @@ body{
 /* ============ RESPONSIVE ============ */
 @media (max-width: 380px){
   .card{ padding: 30px 20px 24px; }
-  .otp-box{ width: 40px; height: 50px; font-size: 19px; }
-  .otp-inputs{ gap: 6px; }
 }
 
 /* ============ ACCESSIBILITY ============ */
