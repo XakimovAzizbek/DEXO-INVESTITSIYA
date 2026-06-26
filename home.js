@@ -46,6 +46,31 @@ const db = firebase.firestore();
     return Math.round(n).toLocaleString("ru-RU") + " so‘m";
   }
 
+  // Balans raqamini sanab o'tib (count-up) chiqaradigan animatsiya
+  function animateBalance(from, to) {
+    const el = document.getElementById("balance-amount");
+    if (!el) return;
+
+    const duration = 700;
+    const startTime = performance.now();
+
+    function tick(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = from + (to - from) * eased;
+
+      el.innerHTML = Math.round(value).toLocaleString("ru-RU") + "<span>so‘m</span>";
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        el.innerHTML = Math.round(to).toLocaleString("ru-RU") + "<span>so‘m</span>";
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
   // ---------- AUTH GUARD + BALANCE ----------
   auth.onAuthStateChanged((user) => {
     if (!user) {
@@ -67,12 +92,13 @@ const db = firebase.firestore();
     }
 
     // Firestore'dagi users/{uid} hujjatini real vaqtda kuzatish
+    let displayedBalance = null;
     db.collection("users").doc(user.uid).onSnapshot(
       (doc) => {
         const data = doc.data();
         const balance = (data && typeof data.balance === "number") ? data.balance : 0;
-        document.getElementById("balance-amount").innerHTML =
-          balance.toLocaleString("ru-RU") + "<span>so‘m</span>";
+        animateBalance(displayedBalance === null ? 0 : displayedBalance, balance);
+        displayedBalance = balance;
       },
       (error) => console.error("Balansni o'qishda xatolik:", error)
     );

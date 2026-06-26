@@ -131,6 +131,7 @@ a{ text-decoration:none; color:inherit; }
   font-weight:800;
   font-size:36px;
   letter-spacing:-0.5px;
+  font-variant-numeric: tabular-nums;
 }
 .balance-amount span{
   font-size:18px;
