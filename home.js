@@ -59,12 +59,12 @@ const db = firebase.firestore();
       const eased = 1 - Math.pow(1 - progress, 3);
       const value = from + (to - from) * eased;
 
-      el.innerHTML = Math.round(value).toLocaleString("ru-RU") + "<span>so‘m</span>";
+      el.innerHTML = value.toFixed(4) + "<span>USDT</span>";
 
       if (progress < 1) {
         requestAnimationFrame(tick);
       } else {
-        el.innerHTML = Math.round(to).toLocaleString("ru-RU") + "<span>so‘m</span>";
+        el.innerHTML = to.toFixed(4) + "<span>USDT</span>";
       }
     }
 
