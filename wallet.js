@@ -1,10 +1,11 @@
 // ============================================
 // DEXO INVEST — Wallet (Top-up) Logic
 // Ma'lumotlar bazasi: Firestore
-// Foydalanuvchi USDT yuborib, Tx hash kiritadi.
-// So'rov "pending" holatda yaratiladi va admin
-// tomonidan ad-topup.html'da blokcheyn explorer
-// orqali qo'lda tekshirilib tasdiqlanadi/rad etiladi.
+// Tx hash tekshiruvi va balansni to'ldirish endi
+// to'liq server tomonida (Cloud Function: verifyTopup)
+// bajariladi — foydalanuvchi buni chetlab o'tolmaydi,
+// chunki balansga yozish huquqi clientda yo'q
+// (qarang: firestore.rules).
 // Firebase config va init shu faylning o'zida
 // ============================================
 
@@ -24,11 +25,13 @@ firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+const functions = firebase.app().functions(); // mintaqa kerak bo'lsa: firebase.app().functions("us-central1")
 
 // ---------- CONSTANTS ----------
 const MIN_AMOUNT = 1; // USDT
 
 // TODO: bu yerga o'zingizning haqiqiy USDT hamyon manzillaringizni yozing
+// (functions/index.js ichidagi WALLET_ADDRESSES bilan bir xil bo'lishi shart)
 const WALLET_ADDRESSES = {
   trc20: "YOUR_TRC20_ADDRESS_HERE",
   bep20: "YOUR_BEP20_ADDRESS_HERE",
@@ -83,12 +86,13 @@ const NETWORK_NAMES = {
     return Number(amountInput.value.replace(",", ".")) || 0;
   }
 
-  function setButtonLoading(loading) {
+  function setButtonLoading(loading, label) {
     const text = btnSubmit.querySelector(".btn-text");
     const loader = btnSubmit.querySelector(".btn-loader");
     btnSubmit.disabled = loading;
     if (loader) loader.hidden = !loading;
-    if (text) text.style.opacity = loading ? "0.55" : "1";
+    if (text && label) text.textContent = label;
+    if (text) text.style.opacity = loading ? "0.7" : "1";
   }
 
   // ---------- NETWORK TABS ----------
@@ -120,7 +124,7 @@ const NETWORK_NAMES = {
     }
   });
 
-  // ---------- AMOUNT INPUT ----------
+  // ---------- AMOUNT / TXHASH INPUT ----------
   amountInput.addEventListener("input", (e) => {
     let val = e.target.value.replace(",", ".").replace(/[^0-9.]/g, "");
     const parts = val.split(".");
@@ -155,7 +159,7 @@ const NETWORK_NAMES = {
     listenForNotifications(user.uid);
   });
 
-  // ---------- NOTIFICATIONS (sahifa ichi bildirishnoma) ----------
+  // ---------- NOTIFICATIONS ----------
   function listenForNotifications(uid) {
     db.collection("notifications")
       .where("uid", "==", uid)
@@ -203,6 +207,7 @@ const NETWORK_NAMES = {
             <span class="topup-item-badge topup-item-badge--${t.status}">${badgeText[t.status] || t.status}</span>
           </div>
           <div class="topup-item-hash">Tx: ${escapeHtml(t.txHash)}</div>
+          ${t.status === "rejected" && t.rejectReason ? `<div class="topup-item-hash">Sabab: ${escapeHtml(t.rejectReason)}</div>` : ""}
         `;
         topupList.appendChild(item);
       });
@@ -214,7 +219,7 @@ const NETWORK_NAMES = {
     return div.innerHTML;
   }
 
-  // ---------- SUBMIT TOPUP REQUEST ----------
+  // ---------- SUBMIT: Cloud Function'ni chaqirish ----------
   btnSubmit.addEventListener("click", async () => {
     const amount = getAmountValue();
     const txHash = txHashInput.value.trim();
@@ -237,26 +242,21 @@ const NETWORK_NAMES = {
 
     if (hasError) return;
 
-    setButtonLoading(true);
+    setButtonLoading(true, "Tekshirilmoqda...");
 
     try {
-      await db.collection("topups").add({
-        uid: currentUser.uid,
-        amount: amount,
-        network: selectedNetwork,
-        txHash: txHash,
-        status: "pending",
-        createdAt: Date.now(),
-      });
+      const verifyTopup = functions.httpsCallable("verifyTopup");
+      const result = await verifyTopup({ network: selectedNetwork, txHash, amount });
 
-      showToast("So‘rov yuborildi, tasdiqlanishini kuting", "success");
+      showToast(`Tasdiqlandi! ${formatUsdt(result.data.amount)} balansga qo‘shildi`, "success");
       amountInput.value = "";
       txHashInput.value = "";
     } catch (err) {
       console.error(err);
-      showToast("Xatolik yuz berdi. Qaytadan urining", "error");
+      const message = err && err.message ? err.message : "Xatolik yuz berdi. Qaytadan urining";
+      showToast(message, "error");
     } finally {
-      setButtonLoading(false);
+      setButtonLoading(false, "So‘rov yuborish");
     }
   });
 
