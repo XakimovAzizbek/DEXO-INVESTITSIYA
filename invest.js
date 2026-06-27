@@ -1,7 +1,9 @@
 // ============================================
 // DEXO INVEST — Invest Logic
 // Ma'lumotlar bazasi: Firestore
-// Shart: +1% / 10 kun. Min miqdor: 50 000 so'm
+// Valyuta: USDT. Shart: +1% / 10 kun. Min miqdor: 5 USDT
+// Investitsiya avval "pending" holatda yaratiladi va
+// admin tomonidan ad-invest.html'da tasdiqlanadi/rad etiladi.
 // Firebase config va init shu faylning o'zida
 // ============================================
 
@@ -23,7 +25,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ---------- CONSTANTS ----------
-const MIN_AMOUNT = 50000;
+const MIN_AMOUNT = 5; // USDT
 const PROFIT_PERCENT = 1; // 1%
 const DURATION_DAYS = 10;
 const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
@@ -46,6 +48,7 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
   const emptyState = document.getElementById("empty-state");
 
   const toastEl = document.getElementById("toast");
+  const notifBanner = document.getElementById("notif-banner");
 
   // ---------- STATE ----------
   let currentUser = null;
@@ -61,21 +64,12 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
     }, 3200);
   }
 
-  function formatSom(n) {
-    return Math.round(n).toLocaleString("ru-RU") + " so‘m";
-  }
-
-  function getRawDigits(value) {
-    return value.replace(/\D/g, "");
-  }
-
-  function formatThousands(rawDigits) {
-    if (!rawDigits) return "";
-    return Number(rawDigits).toLocaleString("ru-RU");
+  function formatUsdt(n) {
+    return Number(n).toFixed(4) + " USDT";
   }
 
   function getAmountValue() {
-    return Number(getRawDigits(amountInput.value)) || 0;
+    return Number(amountInput.value.replace(",", ".")) || 0;
   }
 
   function setButtonLoading(loading) {
@@ -91,9 +85,9 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
     const profit = amount * (PROFIT_PERCENT / 100);
     const total = amount + profit;
 
-    summaryBalance.textContent = formatSom(currentBalance);
-    summaryProfit.textContent = amount > 0 ? formatSom(profit) : "0 so‘m";
-    summaryTotal.textContent = amount > 0 ? formatSom(total) : "0 so‘m";
+    summaryBalance.textContent = formatUsdt(currentBalance);
+    summaryProfit.textContent = amount > 0 ? formatUsdt(profit) : "0.0000 USDT";
+    summaryTotal.textContent = amount > 0 ? formatUsdt(total) : "0.0000 USDT";
 
     chips.forEach((chip) => {
       chip.classList.toggle("active", Number(chip.dataset.amount) === amount);
@@ -102,19 +96,21 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
 
   // ---------- AMOUNT INPUT ----------
   amountInput.addEventListener("input", (e) => {
-    const raw = getRawDigits(e.target.value).slice(0, 12);
-    e.target.value = formatThousands(raw);
+    let val = e.target.value.replace(",", ".").replace(/[^0-9.]/g, "");
+    const parts = val.split(".");
+    if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+    e.target.value = val;
     amountRow.classList.remove("invalid");
-    amountHint.textContent = "Minimal miqdor — 50 000 so‘m";
+    amountHint.textContent = "Minimal miqdor — 5 USDT";
     amountHint.classList.remove("error");
     updateSummary();
   });
 
   chips.forEach((chip) => {
     chip.addEventListener("click", () => {
-      amountInput.value = formatThousands(chip.dataset.amount);
+      amountInput.value = chip.dataset.amount;
       amountRow.classList.remove("invalid");
-      amountHint.textContent = "Minimal miqdor — 50 000 so‘m";
+      amountHint.textContent = "Minimal miqdor — 5 USDT";
       amountHint.classList.remove("error");
       updateSummary();
     });
@@ -148,15 +144,40 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
         },
         (error) => console.error("Investitsiyalarni o'qishda xatolik:", error)
       );
+
+    // O'qilmagan bildirishnomalarni ko'rsatish (tasdiqlash/rad etish haqida)
+    listenForNotifications(user.uid);
   });
+
+  // ---------- NOTIFICATIONS (sahifa ichi bildirishnoma) ----------
+  function listenForNotifications(uid) {
+    db.collection("notifications")
+      .where("uid", "==", uid)
+      .where("seen", "==", false)
+      .onSnapshot((snapshot) => {
+        if (snapshot.empty) {
+          notifBanner.classList.add("hidden");
+          return;
+        }
+
+        const docSnap = snapshot.docs[0];
+        const notif = docSnap.data();
+
+        notifBanner.textContent = notif.message;
+        notifBanner.classList.remove("hidden");
+        notifBanner.classList.toggle("notif-banner--rejected", notif.type === "rejected");
+
+        // Ko'rilgan deb belgilash (bir marta ko'rsatiladi)
+        db.collection("notifications").doc(docSnap.id).update({ seen: true }).catch(() => {});
+      });
+  }
 
   // ---------- RENDER LIST ----------
   function renderInvestments(docs) {
-    const activeDocs = docs.filter((d) => d.data().status === "active");
+    const visibleDocs = docs.filter((d) => d.data().status === "active" || d.data().status === "pending");
 
-    if (activeDocs.length === 0) {
+    if (visibleDocs.length === 0) {
       emptyState.style.display = "block";
-      // faol bo'lmaganlarni tozalash (faqat empty-state qoladi)
       Array.from(investList.querySelectorAll(".invest-item")).forEach((el) => el.remove());
       return;
     }
@@ -164,11 +185,28 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
     emptyState.style.display = "none";
     Array.from(investList.querySelectorAll(".invest-item")).forEach((el) => el.remove());
 
-    // Eng yangisi tepada
-    activeDocs
-      .sort((a, b) => b.data().startAt.toMillis() - a.data().startAt.toMillis())
+    visibleDocs
+      .sort((a, b) => b.data().createdAt - a.data().createdAt || 0)
       .forEach((docSnap) => {
         const inv = docSnap.data();
+
+        if (inv.status === "pending") {
+          const item = document.createElement("div");
+          item.className = "invest-item";
+          item.innerHTML = `
+            <div class="invest-item-top">
+              <span class="invest-item-amount">${formatUsdt(inv.amount)}</span>
+              <span class="invest-item-badge invest-item-badge--pending">Tekshirilmoqda</span>
+            </div>
+            <div class="invest-item-foot">
+              <span>So‘rov admin tomonidan ko‘rib chiqilmoqda</span>
+            </div>
+          `;
+          investList.appendChild(item);
+          return;
+        }
+
+        // status === "active"
         const now = Date.now();
         const startMs = inv.startAt.toMillis();
         const endMs = inv.endAt.toMillis();
@@ -184,13 +222,13 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
         item.className = "invest-item";
         item.innerHTML = `
           <div class="invest-item-top">
-            <span class="invest-item-amount">${formatSom(inv.amount)}</span>
+            <span class="invest-item-amount">${formatUsdt(inv.amount)}</span>
             <span class="invest-item-badge">+${inv.profitPercent}%</span>
           </div>
           <div class="invest-item-bar"><div class="invest-item-bar-fill" style="width:${progressPercent}%"></div></div>
           <div class="invest-item-foot">
             <span>${daysLeft > 0 ? daysLeft + " kun qoldi" : "Yakunlanmoqda..."}</span>
-            <span>+${formatSom(profitAmount)}</span>
+            <span>+${formatUsdt(profitAmount)}</span>
           </div>
         `;
         investList.appendChild(item);
@@ -200,12 +238,11 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
   // ---------- AUTO-COMPLETE MATURED INVESTMENTS ----------
   // Sahifa ochilganda muddati (10 kun) tugagan "active" investitsiyalarni
   // tekshiradi va balansga summa+foizni avtomatik qaytaradi.
-  // Faqat Firestore orqali ishlaydi, hech qanday tashqi server kerak emas.
   async function checkAndCompleteMatured(docs) {
     const now = Date.now();
     const maturedDocs = docs.filter((d) => {
       const data = d.data();
-      return data.status === "active" && data.endAt.toMillis() <= now;
+      return data.status === "active" && data.endAt && data.endAt.toMillis() <= now;
     });
 
     for (const docSnap of maturedDocs) {
@@ -223,8 +260,8 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
         if (!investSnap.exists) return;
 
         const inv = investSnap.data();
-        if (inv.status !== "active") return; // boshqa tab/oyna allaqachon yopgan bo'lishi mumkin
-        if (inv.endAt.toMillis() > Date.now()) return; // hali muddati tugamagan
+        if (inv.status !== "active") return;
+        if (inv.endAt.toMillis() > Date.now()) return;
 
         const userSnap = await tx.get(userRef);
         const userData = userSnap.data() || {};
@@ -247,13 +284,13 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
     }
   }
 
-  // ---------- CREATE INVESTMENT ----------
+  // ---------- CREATE INVESTMENT (pending holatda yaratiladi) ----------
   btnCreate.addEventListener("click", async () => {
     const amount = getAmountValue();
 
     if (amount < MIN_AMOUNT) {
       amountRow.classList.add("invalid");
-      amountHint.textContent = "Miqdor kamida 50 000 so‘m bo‘lishi kerak";
+      amountHint.textContent = "Miqdor kamida 5 USDT bo‘lishi kerak";
       amountHint.classList.add("error");
       amountInput.focus();
       return;
@@ -271,9 +308,6 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
     const userRef = db.collection("users").doc(currentUser.uid);
     const newInvestRef = db.collection("investments").doc();
 
-    const startAt = firebase.firestore.Timestamp.now();
-    const endAt = firebase.firestore.Timestamp.fromMillis(startAt.toMillis() + DURATION_MS);
-
     try {
       await db.runTransaction(async (tx) => {
         const userSnap = await tx.get(userRef);
@@ -284,20 +318,19 @@ const DURATION_MS = DURATION_DAYS * 24 * 60 * 60 * 1000;
           throw new Error("insufficient-balance");
         }
 
+        // Mablag' balansdan ayriladi va admin tasdiqlashini kutadi
         tx.update(userRef, { balance: balanceNow - amount });
         tx.set(newInvestRef, {
           uid: currentUser.uid,
           amount: amount,
           profitPercent: PROFIT_PERCENT,
           durationDays: DURATION_DAYS,
-          startAt: startAt,
-          endAt: endAt,
-          status: "active",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          status: "pending",
+          createdAt: Date.now(),
         });
       });
 
-      showToast("Investitsiya muvaffaqiyatli yaratildi", "success");
+      showToast("So‘rov yuborildi, tasdiqlanishini kuting", "success");
       amountInput.value = "";
       updateSummary();
     } catch (err) {
