@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="wallet.css">
 </head>
 <body>
 
@@ -25,8 +26,52 @@
     </div>
   </div>
 
-  <div class="section-label">Hamyon</div>
-  <div class="empty-state">Bu sahifa hali tayyorlanmoqda.</div>
+  <div id="notif-banner" class="notif-banner hidden"></div>
+
+  <div class="section-label">Hamyonni to‘ldirish</div>
+
+  <!-- ===================== TARMOQ TANLASH ===================== -->
+  <div class="network-tabs">
+    <button class="network-tab network-tab--active" data-network="trc20">TRC20 (Tron)</button>
+    <button class="network-tab" data-network="bep20">BEP20 (BSC)</button>
+  </div>
+
+  <!-- ===================== HAMYON MANZILI ===================== -->
+  <div class="address-card">
+    <div class="address-label">USDT yuborish manzili</div>
+    <div class="address-row">
+      <span class="address-value" id="wallet-address">—</span>
+      <button class="copy-btn" id="btn-copy-address" type="button">Nusxalash</button>
+    </div>
+    <p class="address-hint">Faqat <span id="network-name-hint">TRC20 (Tron)</span> tarmog‘i orqali yuboring. Boshqa tarmoqdan yuborilgan mablag‘ qaytarilmaydi.</p>
+  </div>
+
+  <!-- ===================== SO'ROV FORMASI ===================== -->
+  <div class="form-card">
+    <label class="field-label" for="amount-input">Yuborgan summangiz</label>
+    <div class="amount-row">
+      <input id="amount-input" class="amount-input" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+      <span class="amount-suffix">USDT</span>
+    </div>
+    <p class="field-hint" id="amount-hint">Minimal miqdor — 1 USDT</p>
+
+    <label class="field-label field-label--mt" for="txhash-input">Tranzaksiya hash (Tx ID)</label>
+    <input id="txhash-input" class="text-input" type="text" placeholder="0x... yoki tranzaksiya ID" autocomplete="off">
+    <p class="field-hint" id="txhash-hint">To‘lovni amalga oshirgandan so‘ng tranzaksiya ID raqamini shu yerga kiriting</p>
+
+    <button class="btn-primary" id="btn-submit-topup">
+      <span class="btn-text">So‘rov yuborish</span>
+      <span class="btn-loader" hidden></span>
+    </button>
+  </div>
+
+  <!-- ===================== SO'ROVLAR TARIXI ===================== -->
+  <div class="section-label">So‘rovlar tarixi</div>
+  <div id="topup-list" class="topup-list">
+    <div class="empty-state" id="empty-state">Hozircha so‘rovlar yo‘q</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 </div>
 
 <nav class="bottom-nav">
@@ -44,5 +89,9 @@
   </a>
 </nav>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="wallet.js"></script>
 </body>
 </html>
